@@ -14,22 +14,30 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 # ==========================================
-# 0. الثوابت والتسميات والكليات المعتمدة ومسارات الصور
+# 0. الثوابت والتسميات ومسارات الصور التلقائية (متوافقة مع GitHub و Streamlit Cloud)
 # ==========================================
 DB_PATH = "university_integrated_platform_v26.db"
-BASE_DIR = r"C:\Users\Ce PC\Desktop\mohammed"
 
-# شعار الجامعة يميناً
-LOGO_RIGHT_PATH = os.path.join(BASE_DIR, "images.png")
+# مسار ديناميكي يتعرف تلقائياً على مجلد المشروع أينما كان
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# شعار حاضنة الأعمال يساراً
-LOGO_LEFT_PATH = os.path.join(BASE_DIR, "images2.png")
-if not os.path.exists(LOGO_LEFT_PATH):
-    for fname in ["image2.png", "image2.jpg", "images2.jpg", "images2.jpeg"]:
-        alt_p = os.path.join(BASE_DIR, fname)
-        if os.path.exists(alt_p):
-            LOGO_LEFT_PATH = alt_p
-            break
+def find_image(filenames):
+    for fn in filenames:
+        # البحث في المجلد الحالي
+        p1 = os.path.join(CURRENT_DIR, fn)
+        if os.path.exists(p1):
+            return p1
+        # البحث المباشر
+        if os.path.exists(fn):
+            return fn
+        # المسار المحلي في حال التشغيل من حاسوبك
+        local_p = os.path.join(r"C:\Users\Ce PC\Desktop\mohammed", fn)
+        if os.path.exists(local_p):
+            return local_p
+    return None
+
+LOGO_RIGHT_PATH = find_image(["images.png", "image.png", "images.jpg", "image.jpg"])
+LOGO_LEFT_PATH = find_image(["images2.png", "image2.png", "images2.jpg", "image2.jpg", "images2.jpeg"])
 
 FACULTIES = [
     "كلية العلوم والتكنولوجيا",
@@ -322,11 +330,12 @@ def _rtl_visual(text: str) -> str:
 
 
 def _load_font(size: int, bold: bool = False):
-    candidates = (
-        ["C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/tahomabd.ttf"]
-        if bold
-        else ["C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/tahoma.ttf"]
-    )
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if bold else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/tahomabd.ttf" if bold else "C:/Windows/Fonts/tahoma.ttf",
+    ]
     for path in candidates:
         if os.path.exists(path):
             try:
@@ -854,7 +863,7 @@ st.set_page_config(page_title="منصة التكامل البيداغوجي وا
 
 
 def load_clean_pil_image(path):
-    if os.path.exists(path):
+    if path and os.path.exists(path):
         try:
             img = Image.open(path).convert("RGBA")
             enhancer = ImageEnhance.Sharpness(img)
@@ -879,7 +888,7 @@ st.markdown(
         text-align: right;
     }
 
-    /* بطاقة الترويسة الوسطى الأنيقة والمتباينة */
+    /* بطاقة الترويسة الوسطى بخلفية ناصعة ومتباينة */
     .hero-center-box {
         background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 45%, #172554 100%);
         border: 1.5px solid rgba(255, 255, 255, 0.35);
@@ -977,17 +986,17 @@ with h_col_right:
         st.markdown("<div style='font-size: 55px; text-align: center;'>🏛️</div>", unsafe_allow_html=True)
 
 with h_col_mid:
-    # إبراز اسم الجامعة بأعلى درجات التباين والوضوح
+    # إبراز اسم الجامعة باللون الأبيض فائق التباين والنقاء
     st.markdown("""
         <div class="hero-center-box">
             <div class="u-republic">
                 <span class="u-dot"></span>
                 <span>الجمهورية الجزائرية الديمقراطية الشعبية</span>
             </div>
-            <div style="text-align: center; margin: 8px 0 20px 0;">
-                <span style="color: #ff0000 !important; -webkit-text-fill-color: #ff0000 !important; font-size: 31px; font-weight: 900; background: rgba(255, 255, 255, 0.08) !important; padding: 4px 22px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.18);  display: inline-block; white-space: nowrap; letter-spacing: 0.5px;">
+            <div style="text-align: center; margin: 8px 0 12px 0;">
+                <h1 style="color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-size: 32px !important; font-weight: 900 !important; background: transparent !important; text-shadow: 0 4px 14px rgba(0,0,0,0.95); margin: 0; padding: 0; white-space: nowrap; letter-spacing: 0.5px;">
                     جامعة عين تموشنت بلحاج بوشعيب
-                </span>
+                </h1>
             </div>
             <div class="u-ribbon">
                 <h3>🎓 منصة التكامل بين حاضنة الأعمال ومصالح البيداغوجيا</h3>
@@ -1000,9 +1009,9 @@ with h_col_left:
     if img_left_pil is not None:
         st.image(img_left_pil, width=155)
     else:
-        st.markdown("<div style='font-size: 60px; text-align: center;'>💡</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 55px; text-align: center;'>💡</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
 if "_flash" in st.session_state:
     _msg, _icon = st.session_state.pop("_flash")
@@ -1040,7 +1049,7 @@ if not st.session_state["incubator_authenticated"]:
             st.rerun()
         else:
             st.sidebar.error("كلمة المرور غير صحيحة!")
-    st.sidebar.info("ℹ️ أنت ونواب العمداء في وضع الاطلاع ")
+    st.sidebar.info("ℹ️ أنت في وضع الاطلاع العام ونواب العمداء.")
 else:
     st.sidebar.success("✅ متصل الآن: مدير الحاضنة (كامل الصلاحيات)")
     if st.sidebar.button("🚪 تسجيل الخروج", use_container_width=True):
@@ -1106,7 +1115,6 @@ with tabs[0]:
 
     total_all_seasons = q("SELECT COUNT(*) AS n FROM faculty_sheets WHERE TRIM(project_name) != ''", one=True)["n"]
 
-    # تم حذف مؤشر إجمالي مشاريع الموسم المحدد والاكتفاء بمؤشرين متوازنين
     col_sum1, col_sum2 = st.columns(2)
     col_sum1.metric("إجمالي المشاريع المسجلة", f"{total_all_seasons} مشروع")
     col_sum2.metric("الموسم الجامعي المفعل حالياً", selected_season)
